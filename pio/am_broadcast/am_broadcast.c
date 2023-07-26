@@ -16,34 +16,62 @@
 void setFreq(PIO pio, uint sm, float freq);
 void setNote(PIO pio, uint sm, int note);
 void playSong(PIO pio, uint sm, int delay_ms, int transpose, int* note, int count);
+void playSongRhythm(PIO pio, uint sm, int delay_ms, int transpose, int* note, int* rhythm, int count);
 void am_broadcast_forever(PIO pio, uint sm, uint offset, uint tx_pin, uint comms_pin, uint carrier_freq);
 void freq_gen_forever(PIO pio, uint sm, uint offset, uint pin, uint carrier_freq);
 
-int song[] = {40, 42, 44, 42, 40, 47, 40, 40};
-// According to chatgpt, hahaha...
-int never_gonna_give_you_up_chorus_indices[] = {
-    34, 34, 36, 39, 41, 36, 41, 36, 34, 41, 41, 39, 36, 34, 34,
-    36, 39, 41, 36, 41, 36, 34, 41, 41, 39, 36, 34, 32, 36, 39,
-    41, 39, 36, 34, 29, 31, 32, 32, 29, 29, 31, 34, 32, 29, 31,
-    29, 32, 32, 29, 29, 31, 34, 36, 36, 36, 34, 29, 29, 34, 32,
-    36, 34, 29, 29, 34, 32, 36, 34, 29, 31, 36, 34, 29, 29, 34,
-    32, 36, 34, 29, 31, 29, 36, 32, 32, 32, 31, 29, 32, 34, 36,
-    36, 36, 36, 32, 32, 36, 34, 29, 29, 34, 32, 36, 34, 29, 31,
-    36, 34, 29, 29, 34, 32, 36, 34, 29, 31, 29, 36, 32, 32, 32,
-    29, 31, 32, 34, 36, 36, 36, 32, 32, 36, 34, 29, 29, 34, 32,
-    36, 34, 29, 31, 36, 34, 29, 29, 34, 32, 36, 34, 29, 31, 29,
-    36, 32, 32, 32, 29, 31, 32, 34, 36, 36, 36, 32, 32, 36, 34,
-    29, 29, 34, 32, 36, 34, 29, 31, 36, 34, 29, 29, 34, 32, 36,
-    34, 29, 31, 29, 36, 32, 32, 32, 29, 31, 32, 34, 36, 36, 36,
-    32, 32, 36, 34, 29, 29, 34, 32, 36, 34, 29, 31, 36, 34, 29,
-    29, 34, 32, 36, 34, 29, 31, 29, 36, 32, 32, 32, 29, 31, 32,
-    34, 36, 36, 36, 32, 32, 36, 34, 29, 29, 34, 32, 36, 34, 29,
-    31, 36, 34, 29, 29, 34, 32, 36, 34, 29, 31, 29, 36, 32, 32,
-    32, 29, 31, 32, 34, 36, 36, 36, 32, 32, 36, 34, 29, 29, 34,
-    32, 36, 34, 29, 31, 36, 34, 29, 29, 34, 32, 36, 34, 29, 31,
-    29, 36, 32, 32, 32, 29, 31, 32, 34, 36, 36, 36, 32, 32, 36,
-    34, 29, 29, 34, 32, 36, 34, 29, 31, 36, 34, 29, 29, 34, 32,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+// Song tweaked from https://projecthub.arduino.cc/rowan07
+#define  a3f    36     // 208 Hz
+#define  a3     37     //
+#define  b3f    38     // 233 Hz
+#define  b3     39     // 247 Hz
+#define  c4     40     // 261 Hz MIDDLE C
+#define  c4s    41     // 277 Hz
+#define  d4f    41     // 277 Hz
+#define  d4     42     // 
+#define  e4f    43     // 311 Hz    
+#define  e4     44     //    
+#define  f4     45     // 349 Hz 
+#define  f4s    46     //
+#define  g4     47     //
+#define  a4f    48     // 415 Hz  
+#define  a4     49     //
+#define  b4f    50     // 466 Hz 
+#define  b4     51     //  493 Hz 
+#define  c5     52     // 523 Hz 
+#define  c5s    53     // 554  Hz
+#define  d5f    53     // 554  Hz
+#define  d5     54     //
+#define  e5f    55     // 622 Hz  
+#define  e5     56     //
+#define  f5     57     // 698 Hz 
+#define  f5s    58     // 740 Hz
+#define  g5     59     //
+#define  a5f    60     // 831 Hz 
+
+int song1_chorus_tempo = (int)(1000/(453/60.0));
+
+int song1_chorus_melody[] =
+{ a4f, b4f, d5f, b4f,
+  f5, f5, e5f, a4f, b4f, d5f, b4f, e5f, e5f, c5s, c5, b4f,
+  a4f, b4f, d5f, b4f,
+  c5s, e5f, c5, b4f, a4f, a4f, a4f, e5f, c5s,
+  a4f, b4f, d5f, b4f,
+  f5,  f5, e5f, a4f, b4f, d5f, b4f, a5f, c5, c5s, c5, b4f,
+  a4f, b4f, d5f, b4f,
+  c5s, e5f, c5, b4f, a4f, 0, a4f, e5f, c5s, 0
+};
+
+int song1_chorus_rhythm[]  =
+{ 1, 1, 1, 1,
+  3, 3, 6, 1, 1, 1, 1, 3, 3, 3, 1, 2,
+  1, 1, 1, 1,
+  3, 3, 3, 1, 2, 2, 2, 4, 8,
+  1, 1, 1, 1,
+  3, 3, 6, 1, 1, 1, 1, 3, 3, 3,  1, 2,
+  1, 1, 1, 1,
+  3, 3, 3, 1, 2, 2, 2, 4, 8, 4
+};
 
 int main() {
     setup_default_uart();
@@ -89,11 +117,8 @@ int main() {
 
     int count;
     while (true) {
-        count = sizeof(song) / sizeof(song[0]);
-        playSong(pio1, 0, 250, 1, song, count);
-
-        count = sizeof(never_gonna_give_you_up_chorus_indices) / sizeof(never_gonna_give_you_up_chorus_indices[0]);
-        playSong(pio1, 0, 100, 1, never_gonna_give_you_up_chorus_indices, count);
+        count = sizeof(song1_chorus_melody) / sizeof(song1_chorus_melody[0]);
+        playSongRhythm(pio1, 0, song1_chorus_tempo, 0, song1_chorus_melody, song1_chorus_rhythm, count);
     }
 }
 
@@ -118,9 +143,17 @@ void setNote(PIO pio, uint sm, int note) {
 }
 
 void playSong(PIO pio, uint sm, int delay_ms, int transpose, int* note, int count) {
+    playSongRhythm(pio, sm, delay_ms, transpose, note, NULL, count);
+}
+
+void playSongRhythm(PIO pio, uint sm, int delay_ms, int transpose, int* note, int* rhythm, int count) {
     for (int i = 0; i < count; i++) {
         setNote(pio, sm, note[i]+transpose);
-        sleep_ms(delay_ms);
+        if (rhythm != NULL) {
+            sleep_ms(delay_ms * rhythm[i]);
+        } else {
+            sleep_ms(delay_ms);
+        }
     }
     setNote(pio, sm, 0);
 }
