@@ -1,0 +1,35 @@
+;
+; Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+
+; //THINK It could still be possible to combine the two programs, shrug?
+
+; //DUMMY pin idxs, pin dirs
+
+.program write_fdic
+.define FCLK_PIN 0
+; //DUMMY
+.define TXEN_PIN 1
+.wrap_target
+    pull IfEmpty block ; //THINK IfEmpty? SHIFTCTRL_PULL_THRESH = 0 or something? //DUMMY Need st passing data between edges
+readyloop:
+    wait 0 pin FCLK_PIN
+    wait 1 pin FCLK_PIN
+    jmp pin readyloop ; //DUMMY Define EXECCTRL_JMP_PIN TXEN_PIN
+    out pins, 8 ; //DUMMY Wait, I think we need to send the data byte by byte
+.wrap
+
+% c-sdk {
+// this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
+
+//DUMMY
+void write_fdic_program_init(PIO pio, uint sm, uint offset, uint pin) {
+   pio_gpio_init(pio, pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+   pio_sm_config c = write_fdic_program_get_default_config(offset);
+   sm_config_set_set_pins(&c, pin, 1);
+   pio_sm_init(pio, sm, offset, &c);
+}
+%}

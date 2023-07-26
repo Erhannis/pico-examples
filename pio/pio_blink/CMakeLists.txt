@@ -2,6 +2,8 @@ add_executable(pio_blink)
 
 # by default the header is generated into the build dir
 pico_generate_pio_header(pio_blink ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
+pico_generate_pio_header(pio_blink ${CMAKE_CURRENT_LIST_DIR}/blinkmax.pio)
+pico_generate_pio_header(pio_blink ${CMAKE_CURRENT_LIST_DIR}/am_broadcast.pio)
 # however, alternatively you can choose to generate it somewhere else (in this case in the source tree for check in)
 #pico_generate_pio_header(pio_blink ${CMAKE_CURRENT_LIST_DIR}/blink.pio OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR})
 

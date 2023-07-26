@@ -1,0 +1,37 @@
+;
+; Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+
+; //DUMMY pin idxs, pin dirs
+
+.program read_epc
+.define ECLK_PIN 0
+; //THINK Maybe different number of pins?
+.define N_RPINS 16
+;.define IfFull 1
+;.define NotIfFull 0
+
+; //DUMMY Set SHUTTER low - maybe in main code
+start:
+.wrap_target
+    wait 0 pin ECLK_PIN ; //DUMMY //CHECK Hang on...there's like, two clocks, isn't there :|  Maybe have one PIO read, the other write?
+    wait 1 pin ECLK_PIN
+    jmp pin start ; //DUMMY Define EXECCTRL_JMP_PIN HSYNC //ALT Just copy HSYNC/VSYNC/SAT with the data and postprocess
+    in pins, N_RPINS
+    push IfFull ; // Block?  Noblock? //DUMMY Set SHIFTCTRL_PUSH_THRESH = 32 //THINK SHIFTCTRL_FJOIN deeper fifo?
+.wrap
+
+% c-sdk {
+// this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
+
+//DUMMY
+void read_epc_program_init(PIO pio, uint sm, uint offset, uint pin) {
+   pio_gpio_init(pio, pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+   pio_sm_config c = read_epc_program_get_default_config(offset);
+   sm_config_set_set_pins(&c, pin, 1);
+   pio_sm_init(pio, sm, offset, &c);
+}
+%}
