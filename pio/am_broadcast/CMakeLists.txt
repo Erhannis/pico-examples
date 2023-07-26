@@ -1,6 +1,7 @@
 add_executable(am_broadcast)
 
 pico_generate_pio_header(am_broadcast ${CMAKE_CURRENT_LIST_DIR}/am_broadcast.pio)
+pico_generate_pio_header(am_broadcast ${CMAKE_CURRENT_LIST_DIR}/freq_gen.pio)
 
 target_sources(am_broadcast PRIVATE am_broadcast.c)
 

@@ -9,10 +9,14 @@
 .program am_broadcast
 .side_set 1 opt
 .wrap_target
-    pull NoBlock    side 0
-    mov x, OSR
-    out pins, 1
-    nop
+    jmp PIN on
+off:
+    set pins, 0
+    jmp rest
+on:
+    set pins, 1 [1]
+rest:
+    set pins, 0
 
     ; nop    side 0
     ; nop
@@ -24,17 +28,18 @@
 % c-sdk {
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 
-void am_broadcast_program_init(PIO pio, uint sm, uint offset, uint pin, float carrier_freq) {
+void am_broadcast_program_init(PIO pio, uint sm, uint offset, uint tx_pin, uint comms_pin, float carrier_freq) {
    pio_sm_config c = am_broadcast_program_get_default_config(offset);
    int cycles_per_bit = 4;
    int sys_clock = clock_get_hz(clk_sys);
    float div = sys_clock / (carrier_freq * cycles_per_bit);
    sm_config_set_clkdiv(&c, div);
-   pio_gpio_init(pio, pin);
-   pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
-   sm_config_set_set_pins(&c, pin, 1);
-   sm_config_set_out_pins(&c, pin, 1);
-   sm_config_set_sideset_pins(&c, pin);
+   pio_gpio_init(pio, tx_pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, tx_pin, 1, true);
+   sm_config_set_set_pins(&c, tx_pin, 1);
+   sm_config_set_out_pins(&c, tx_pin, 1);
+   sm_config_set_sideset_pins(&c, tx_pin);
+   sm_config_set_jmp_pin(&c, comms_pin);
    pio_sm_init(pio, sm, offset, &c);
 }
 %}
