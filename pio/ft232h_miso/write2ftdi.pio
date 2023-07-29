@@ -10,7 +10,7 @@
 .side_set 1 opt
     set x, 0
 .wrap_target
-    jmp x-- continue
+    jmp x-- continue ; I doubled this, and the read had stride 2, so confirmed correct bits read
 continue:
     mov pins, x
 .wrap
@@ -19,12 +19,12 @@ continue:
 % c-sdk {
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 
-void count2ftdi_program_init(PIO pio, uint sm, uint offset, uint tx_pin, float freq) {
-   pio_sm_config c = count2ftdi_program_get_default_config(offset);
-   int cycles_per_bit = 2;
-   int sys_clock = clock_get_hz(clk_sys);
-   float div = sys_clock / (freq * cycles_per_bit);
-   sm_config_set_clkdiv(&c, div);
+void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint tx_pin) {
+   pio_sm_config c = write2ftdi_program_get_default_config(offset);
+   //int cycles_per_bit = 2;
+   //int sys_clock = clock_get_hz(clk_sys);
+   //float div = sys_clock / (freq * cycles_per_bit);
+   //sm_config_set_clkdiv(&c, div);
    for (int i = 0; i < 8; i++) {
        pio_gpio_init(pio, tx_pin+i);
    }

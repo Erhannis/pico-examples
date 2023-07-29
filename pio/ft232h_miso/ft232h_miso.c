@@ -13,29 +13,56 @@
 #include "am_broadcast.pio.h"
 #include "freq_gen.pio.h"
 #include "count2ftdi.pio.h"
+#include "write2ftdi.pio.h"
 
 void setFreq(PIO pio, uint sm, float freq);
 void setNote(PIO pio, uint sm, int note);
 void playSong(PIO pio, uint sm, int delay_ms, int transpose, int* note, int count);
 void playSongRhythm(PIO pio, uint sm, int delay_ms, int transpose, int* note, int* rhythm, int count);
 void count2ftdi_forever(PIO pio, uint sm, uint offset, uint tx_pin, uint freq);
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint tx_pin);
 void freq_gen_forever(PIO pio, uint sm, uint offset, uint pin, uint carrier_freq);
 
 int main() {
     setup_default_uart();
-    set_sys_clock_khz(1600*10*2, true);
+
+    uint vco, postdiv1, postdiv2;
+    int maxf = 0;
+    
+    int target = 240000;
+    //int target = 275000;
+
+    //int target = 300000;
+    int nearest = 0;
+    for (int f = 0; f < 1000000; f += 1000) {
+        if (check_sys_clock_khz(f, &vco, &postdiv1, &postdiv2)) {
+            printf("%d\n", f);
+            maxf = f;
+            if (abs(target-f) < abs(target-nearest)) {
+                nearest = f;
+            }
+        }
+    }
+    printf("max: %d\n", maxf);
+    printf("nearest: %d\n", nearest);
+
+    set_sys_clock_khz(nearest, true);
 
     int tx_pin = 15;
     int comms_pin = 9;
 
-    uint cf_offset = pio_add_program(pio0, &count2ftdi_program);
-    printf("Loaded program at %d\n", cf_offset);
-    uint freq = 1400000;
-    count2ftdi_forever(pio0, 0, cf_offset, tx_pin, freq);
-
-    uint fg_offset = pio_add_program(pio1, &freq_gen_program);
+    uint fg_offset = pio_add_program(pio0, &freq_gen_program);
     printf("Loaded program at %d\n", fg_offset);
-    freq_gen_forever(pio1, 0, fg_offset, comms_pin, 1);
+    freq_gen_forever(pio0, 0, fg_offset, comms_pin, 1);
+
+    uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
+    printf("Loaded program at %d\n", cf_offset);
+    write2ftdi_forever(pio1, 0, cf_offset, tx_pin);
+
+    int cycles_per_bit = 2;
+    int sys_clock = clock_get_hz(clk_sys);
+    float div = sys_clock / (60000000 * cycles_per_bit);
+    pio_sm_set_clkdiv(pio1, 0, div);
 
     int count;
     while (true) {
@@ -88,6 +115,13 @@ void count2ftdi_forever(PIO pio, uint sm, uint offset, uint tx_pin, uint freq) {
     // PIO counter program takes 3 more cycles in total than we pass as
     // input (wait for n + 1; mov; jmp)
     //pio->txf[sm] = (clock_get_hz(clk_sys) / (2 * freq)) - 3;
+}
+
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint tx_pin) {
+    write2ftdi_program_init(pio, sm, offset, tx_pin);
+    pio_sm_set_enabled(pio, sm, true);
+
+    printf("Writing to FTDI on pins %d\n", tx_pin);
 }
 
 void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin, uint freq) {
