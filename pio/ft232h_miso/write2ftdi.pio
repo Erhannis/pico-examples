@@ -8,11 +8,9 @@
 
 .program write2ftdi
 .side_set 1 opt
-    set x, 0
 .wrap_target
-    jmp x-- continue ; I doubled this, and the read had stride 2, so confirmed correct bits read
-continue:
-    mov pins, x
+    pull block
+    out pins, 8
 .wrap
 
 

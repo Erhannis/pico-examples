@@ -62,11 +62,15 @@ int main() {
     int cycles_per_bit = 2;
     int sys_clock = clock_get_hz(clk_sys);
     float div = sys_clock / (60000000 * cycles_per_bit);
-    pio_sm_set_clkdiv(pio1, 0, div);
+    //pio_sm_set_clkdiv(pio1, 0, div);
 
-    int count;
+    uint32_t count = 0;
     while (true) {
-        sleep_ms(10);
+        pio_sm_put_blocking(pio1, 0, count); // 3-4 counts
+
+        //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
+
+        count++;
     }
 }
 
