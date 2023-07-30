@@ -6,31 +6,54 @@
 
 ; SET pin 0 should be mapped to your LED GPIO
 
+
+/*
+Possible optimizations
+----
+Skip TXE# wait
+Skip CLK check, be slightly slower than CLK frequency and include timing bit for postprocessing dedup
+...Moar overclocking
+*/
 .program write2ftdi
 .side_set 1 opt
 .wrap_target
-    pull block
-    out pins, 8
+    pull block   side 1 ; WR#, TX off
+    ;pull block   side 0 ; WR#, TX off
+
+    ;wait 0 pin 0        ; wait for TXE# low //CORNER We could maybe skip this check....
+
+    wait 0 pin 1        ; wait for CLK  low //CHECK Low or high?
+
+    out pins, 8  side 0 ; WR#, TX on // Suspicious of timing - it won't send old data barely, will it? | Yeah, I caught a few instances where weird data was sent.  Maybe 1 in 5000?  Also/or saw like, probably numbers only partially changed
+
+    wait 1 pin 1        ; wait for CLK  high //CHECK Low or high? // Assumes we're like, >=3x faster than the clock
 .wrap
 
 
 % c-sdk {
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 
-void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint tx_pin) {
+void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pin, uint txe_then_clk_pin, uint wr_pin) {
    pio_sm_config c = write2ftdi_program_get_default_config(offset);
-   //int cycles_per_bit = 2;
-   //int sys_clock = clock_get_hz(clk_sys);
-   //float div = sys_clock / (freq * cycles_per_bit);
-   //sm_config_set_clkdiv(&c, div);
    for (int i = 0; i < 8; i++) {
-       pio_gpio_init(pio, tx_pin+i);
+       pio_gpio_init(pio, data_pin+i);
    }
-   pio_sm_set_consecutive_pindirs(pio, sm, tx_pin, 8, true);
-   sm_config_set_set_pins(&c, tx_pin, 8);
-   sm_config_set_out_pins(&c, tx_pin, 8);
-   sm_config_set_sideset_pins(&c, tx_pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, data_pin, 8, true);
+
+   pio_gpio_init(pio, txe_then_clk_pin);
+   pio_gpio_init(pio, txe_then_clk_pin+1);
+   pio_sm_set_consecutive_pindirs(pio, sm, txe_then_clk_pin, 2, false);
+   sm_config_set_in_pins(&c, txe_then_clk_pin);
+   
+   sm_config_set_out_pins(&c, data_pin, 8);
+   
+   pio_gpio_init(pio, wr_pin);
+   pio_sm_set_consecutive_pindirs(pio, sm, wr_pin, 1, true);
+   sm_config_set_set_pins(&c, wr_pin, 1);
+   sm_config_set_sideset_pins(&c, wr_pin);
+   
    //sm_config_set_jmp_pin(&c, comms_pin);
+   
    pio_sm_init(pio, sm, offset, &c);
 }
 %}
