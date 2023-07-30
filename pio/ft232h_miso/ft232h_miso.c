@@ -30,8 +30,8 @@ int main() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
     
-    //int target = 240000;
-    int target = 275000;
+    int target = 240000;
+    //int target = 275000;
     //int target = 280000;
 
     //int target = 290000;
