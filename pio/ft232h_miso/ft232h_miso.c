@@ -17,12 +17,14 @@
 #include "write2ftdi.pio.h"
 
 void setFreq(PIO pio, uint sm, float freq);
+void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin);
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pin, uint txe_then_clk_pin, uint wr_pin);
 
 int comms_pin = 9;
 int data_pins_8 = 15;
-int txe_then_clk_pin2_2 = 26;
-int wr_pin = 28;
+// int txe_then_clk_pin2_2 = 26;
+int txe_then_clk_pin2_2 = 20;
+int wr_pin = 10;
 
 int main() {
     setup_default_uart();
@@ -30,9 +32,13 @@ int main() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
     
-    int target = 240000;
-    //int target = 275000;
-    //int target = 280000;
+    // int target = 25000;
+    // int target = 100000;
+    // int target = 200000;
+    // int target = 240000;
+    // int target = 260000;
+    // int target = 275000;
+    int target = 280000;
 
     //int target = 290000;
     //int target = 300000;
@@ -53,6 +59,18 @@ int main() {
 
     //vreg_set_voltage(VREG_VOLTAGE_1_20);
     set_sys_clock_khz(nearest, true);
+
+    //BCRASH This is bad, according to the docs, something something metastable
+    hw_set_bits(&pio1->input_sync_bypass, 1u << (txe_then_clk_pin2_2+1));
+
+    // gpio_init(txe_then_clk_pin2_2+1);
+    // gpio_set_dir(txe_then_clk_pin2_2+1, GPIO_IN);
+    // uint32_t events = GPIO_EVT_EDGE_RISE;
+    // gpio_set_irq_enabled(PIN, GPIO_EVT_EDGE_RISE, true, &gpio_callback);
+
+    uint fg_offset = pio_add_program(pio0, &freq_gen_program);
+    printf("Loaded program at %d\n", fg_offset);
+    freq_gen_forever(pio0, 0, fg_offset, comms_pin);
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
@@ -86,6 +104,11 @@ void setFreq(PIO pio, uint sm, float freq) {
         float div = sys_clock / (freq * cycles_per_bit);
         pio_sm_set_clkdiv(pio, sm, div);
     }
+}
+
+void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin) {
+    freq_gen_program_init(pio, sm, offset, comms_pin);
+    pio_sm_set_enabled(pio, sm, true);
 }
 
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pin, uint txe_then_clk_pin, uint wr_pin) {

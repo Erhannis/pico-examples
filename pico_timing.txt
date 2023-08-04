@@ -1,0 +1,20 @@
+ok, so.
+When I run nops with sides, the output signals change within 1 sample of each other.
+When I pull and wait, they're up to like 7 samples away???
+When I just wait, they're back down to 1 sample difference.
+  Could be in a rhythm.
+
+30ns at 200MHz
+54ns at 100MHz
+190ns at 25MHz
+
+So it takes like...5 clock cycles, for a wait to propagate?
+Ah.  `mov pins, pins` takes 4-5 cycles.
+So.  It seems that i/o round trip time is... 4.5 cycles; like, draw a line 4.5 cycles ago.  If a change happened before that, we know about it, if after, we don't.
+  Plus or minus the uncertainty principle of in vs out times.
+  I switched from clk pin 27 (an adc) to 21, and it seems to be faster by a cycle - still ~3.5, though
+That kinda throws a wrench in the works.
+...With INPUT_SYNC_BYPASS turned off, the latency is down to "anything more than 1 cycle ago, we know about it"
+  However, "Sampling a metastable input can lead to unpredictable state machine behaviour. This should be avoided."
+    So...not really a good idea.
+I played with trying to game the delay to line up right, but I think I'm just going to sacrifice a bit as an artificial clock signal, and hold down tx.
