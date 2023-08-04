@@ -18,3 +18,9 @@ That kinda throws a wrench in the works.
   However, "Sampling a metastable input can lead to unpredictable state machine behaviour. This should be avoided."
     So...not really a good idea.
 I played with trying to game the delay to line up right, but I think I'm just going to sacrifice a bit as an artificial clock signal, and hold down tx.
+
+Options I didn't fully explore:
+  use CLKOUT as external clock for Pico
+    maybe problem: 60MHz > 50MHz max
+  *maybe* you can use the external gpio irq to the pios
+  

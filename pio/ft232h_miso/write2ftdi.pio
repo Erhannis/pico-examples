@@ -6,119 +6,64 @@
 
 ; SET pin 0 should be mapped to your LED GPIO
 
+; //BCRASH Wait, dang, I just remembered - I've seen partially changed bytes get sent. :/ This means our "always send" method may not work.  ...Unless I DO turn WR# on/off?
+; //CHECK Turn WR# on/off?
 
-/*
-Possible optimizations
-----
-Skip TXE# wait
-Skip CLK check, be slightly slower than CLK frequency and include timing bit for postprocessing dedup
-...Moar overclocking
-*/
 .program write2ftdi
-.side_set 2 opt
+.side_set 1 opt
 ; .wrap_target
-;     pull block   side 0b10 ; WR#, TX off
-;     ;pull block   side 0 ; WR#, TX off
-
-;     ;wait 0 pin 0        ; wait for TXE# low //CORNER We could maybe skip this check....
-
-;     wait 0 pin 1 side 0b11 ; wait for CLK  low //CHECK Low or high?
-
-;     out pins, 8  side 0b00 ; WR#, TX on // Suspicious of timing - it won't send old data barely, will it? | Yeah, I caught a few instances where weird data was sent.  Maybe 1 in 5000?  Also/or saw like, probably numbers only partially changed
-
-;     wait 1 pin 1 side 0b01 ; wait for CLK  high //CHECK Low or high? // Assumes we're like, >=3x faster than the clock
+;     ; pull IfEmpty Block   side 0
+;     out pins, 7          side 1
+;     ; pull IfEmpty Block   side 1
+;     out pins, 7          side 0
 ; .wrap
 
 ; .wrap_target
-;     nop   side 0b10
-;     nop   side 0b11
-;     nop   side 0b00
-;     nop   side 0b01
+;     pull Block           side 0
+;     out pins, 7          side 1
+;     pull Block           side 1
+;     out pins, 7          side 0
 ; .wrap
 
+;     set x, 0            side 0
 ; .wrap_target
-;     nop            side 0b10
-;     wait 0 pin 1   side 0b11
-;     nop            side 0b00
-;     wait 1 pin 1   side 0b01
-; .wrap
-
-; .wrap_target
-;     nop            side 0b1
-;     wait 0 pin 1   side 0b1
-;     nop            side 0b0
-;     wait 1 pin 1   side 0b0
-; .wrap
-
-; .wrap_target
-;     wait 1 pin 1   side 0b10
-;     wait 0 pin 1   side 0b11
-;     nop            side 0b00
-;     nop            side 0b01
-; .wrap
-
-; .wrap_target
-; ;    nop    [3]     side 0b10
-;     wait 1 pin 1   side 0b10
-;     wait 0 pin 1   side 0b01
-;     nop            side 0b00
-;     nop            side 0b11
+;     jmp x-- continue0   side 0
+; continue0:
+;     mov pins, x         side 1
+;     jmp x-- continue1   side 1
+; continue1:
+;     mov pins, x         side 0
 ; .wrap
 
 .wrap_target
-;    nop    [3]     side 0b10
-    wait 1 pin 1   side 0b00
-    wait 0 pin 1   side 0b01
-    nop            side 0b10
-    nop            side 0b11
+    out pins, 7          side 0
+    nop                  side 1
+    out pins, 7          side 1
+    nop                  side 0
 .wrap
-
-; .wrap_target
-;     in pins 1   side 0b10
-;     in pins 1   side 0b11
-;     in pins 1   side 0b00
-;     in pins 1   side 0b01
-; .wrap
-
-; .wrap_target
-;     mov pins, pins   side 0b10
-;     mov pins, pins   side 0b11
-;     mov pins, pins   side 0b00
-;     mov pins, pins   side 0b01
-; .wrap
-
-; .wrap_target
-;     wait 1 irq 1   side 0b10
-;     wait 1 pin 1   side 0b11
-;     nop            side 0b00
-;     nop            side 0b01
-; .wrap
-
-
 
 
 % c-sdk {
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 
-void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pin, uint txe_then_clk_pin, uint wr_pin) {
+void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_7, uint clk_then_wr_pin) {
    pio_sm_config c = write2ftdi_program_get_default_config(offset);
-   int N = 2;//
+   int N = 7;//
    for (int i = 0; i < N; i++) {
-       pio_gpio_init(pio, data_pin+i);
+       pio_gpio_init(pio, data_pins_7+i);
    }
-   pio_sm_set_consecutive_pindirs(pio, sm, data_pin, N, true);
-   sm_config_set_out_pins(&c, data_pin, N);
+   pio_sm_set_consecutive_pindirs(pio, sm, data_pins_7, N, true);
+   sm_config_set_out_pins(&c, data_pins_7, N);
 
-   pio_gpio_init(pio, txe_then_clk_pin);
-   pio_gpio_init(pio, txe_then_clk_pin+1);
-   pio_sm_set_consecutive_pindirs(pio, sm, txe_then_clk_pin, 2, false);
-   sm_config_set_in_pins(&c, txe_then_clk_pin);
+;    pio_gpio_init(pio, clk_then_wr_pin);
+;    pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 1, false);
+;    sm_config_set_in_pins(&c, clk_then_wr_pin);
       
-   pio_gpio_init(pio, wr_pin);
-   pio_gpio_init(pio, wr_pin+1);
-   pio_sm_set_consecutive_pindirs(pio, sm, wr_pin, 2, true);
-   sm_config_set_set_pins(&c, wr_pin, 2);
-   sm_config_set_sideset_pins(&c, wr_pin);
+   pio_gpio_init(pio, clk_then_wr_pin);
+   pio_gpio_init(pio, clk_then_wr_pin+1);
+   pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 2, true);
+   sm_config_set_set_pins(&c, clk_then_wr_pin, 2);
+   sm_config_set_sideset_pins(&c, clk_then_wr_pin);
 
    //sm_config_set_jmp_pin(&c, comms_pin);
    
