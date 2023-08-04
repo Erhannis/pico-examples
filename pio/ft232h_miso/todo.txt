@@ -1,0 +1,11 @@
+check skip length
+  1 - ~30
+  2 - ~21
+  ~20 - ~8.5
+
+apply WR#
+
+Note: I think I'm getting ~1% false positive on clock
+  I'm not even enabling it, rn
+
+cpu fifo?
