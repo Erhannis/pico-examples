@@ -12,104 +12,52 @@
 .program write2ftdi
 
 ; .side_set 2 opt
-.side_set 2 
+.side_set 3
 
-; .wrap_target
-;     ; pull IfEmpty Block   side 0
-;     out pins, 7          side 1
-;     ; pull IfEmpty Block   side 1
-;     out pins, 7          side 0
-; .wrap
-
-; .wrap_target
-;     pull Block           side 0
-;     out pins, 7          side 1
-;     pull Block           side 1
-;     out pins, 7          side 0
-; .wrap
-
-;     set x, 0            side 0
-; .wrap_target
-;     jmp x-- continue0   side 0
-; continue0:
-;     mov pins, x         side 1
-;     jmp x-- continue1   side 1
-; continue1:
-;     mov pins, x         side 0
-; .wrap
-
-; .wrap_target
-; ;                             WR#, ACLK
-;     out pins, 7          side 0b10
-;     nop                  side 0b01
-;     nop                  side 0b01
-;     out pins, 7          side 0b11
-;     nop                  side 0b00
-;     nop                  side 0b00
-; .wrap
-
-;     pull Block           side 0b10
-; .wrap_target
-; ;                             WR#, ACLK
-;     nop                  side 0b10
-;     out pins, 7          side 0b11
-;     nop                  side 0b01
-;     pull Block           side 0b01
-;     nop                  side 0b11
-;     out pins, 7          side 0b10
-;     nop                  side 0b00
-;     pull Block           side 0b00
-; .wrap
-
-    pull Block           side 0b10
+;                             CS# A0 WR#
+    pull Block           side 0b101
 .wrap_target
-;                             WR#, ACLK
-    nop                  side 0b10 [3]
-    out pins, 7          side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b01 [3]
-    pull Block           side 0b01 [2]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    nop                  side 0b11 [7]
-    out pins, 7          side 0b10 [7]
-    nop                  side 0b10 [7]
-    nop                  side 0b10 [7]
-    nop                  side 0b10 [7]
-    nop                  side 0b00 [3]
-    pull Block           side 0b00 [2]
-    nop                  side 0b10 [7]
-    nop                  side 0b10 [7]
-    nop                  side 0b10 [7]
-    nop                  side 0b10 [7]
+;                             CS# A0 WR#
+    ; out pins, 8          side 0b001
+    out pins, 8          side 0b101 [3]
+    nop                  side 0b001 [1]
+
+    nop                  side 0b000 [3]
+    nop                  side 0b000 [1]
+    pull Block           side 0b101
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
+    nop                  side 0b101 [3]
 .wrap
 
 
 % c-sdk {
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 
-void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_7, uint clk_then_wr_pin) {
+void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_8, uint cs_a0_wr_pin) {
    pio_sm_config c = write2ftdi_program_get_default_config(offset);
-   int N = 7;//
+   int N = 8;//
    for (int i = 0; i < N; i++) {
-       pio_gpio_init(pio, data_pins_7+i);
+       pio_gpio_init(pio, data_pins_8+i);
    }
-   pio_sm_set_consecutive_pindirs(pio, sm, data_pins_7, N, true);
-   sm_config_set_out_pins(&c, data_pins_7, N);
+   pio_sm_set_consecutive_pindirs(pio, sm, data_pins_8, N, true);
+   sm_config_set_out_pins(&c, data_pins_8, N);
 
-;    pio_gpio_init(pio, clk_then_wr_pin);
-;    pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 1, false);
-;    sm_config_set_in_pins(&c, clk_then_wr_pin);
+//   pio_gpio_init(pio, clk_then_wr_pin);
+//   pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 1, false);
+//   sm_config_set_in_pins(&c, clk_then_wr_pin);
       
-   pio_gpio_init(pio, clk_then_wr_pin);
-   pio_gpio_init(pio, clk_then_wr_pin+1);
-   pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 2, true);
-   sm_config_set_set_pins(&c, clk_then_wr_pin, 2);
-   sm_config_set_sideset_pins(&c, clk_then_wr_pin);
+   pio_gpio_init(pio, cs_a0_wr_pin);
+   pio_gpio_init(pio, cs_a0_wr_pin+1);
+   pio_gpio_init(pio, cs_a0_wr_pin+2);
+   pio_sm_set_consecutive_pindirs(pio, sm, cs_a0_wr_pin, 3, true);
+   sm_config_set_set_pins(&c, cs_a0_wr_pin, 3);
+   sm_config_set_sideset_pins(&c, cs_a0_wr_pin);
 
    //sm_config_set_jmp_pin(&c, comms_pin);
    

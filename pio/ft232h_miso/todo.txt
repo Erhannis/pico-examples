@@ -11,3 +11,7 @@ Note: I think I'm getting ~1% false positive on clock
 cpu fifo?
 
 60MHz external clock?
+
+...Ok, I'm seeing quite compelling evidence of strong noise.
+  Uh...abandon breadboards, use flywires.
+  Ok, so it seems like that's fixed the noise, at least that the analyzer can detect.  But there's still these periodic islands of bad data....!

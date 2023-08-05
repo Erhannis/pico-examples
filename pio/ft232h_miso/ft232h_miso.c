@@ -18,11 +18,11 @@
 
 void setFreq(PIO pio, uint sm, float freq);
 void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin);
-void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_7, uint clk_then_wr_pin);
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint cs_a0_wr_pin);
 
 int comms_pin = 9;
-int data_pins_7 = 16;
-int clk_then_wr_pin = 26;
+int data_pins_8 = 15;
+int cs_a0_wr_pin = 26;
 
 int main() {
     setup_default_uart();
@@ -35,10 +35,10 @@ int main() {
     // int target = 120000;
     // int target = 140000;
     // int target = 200000;
-    // int target = 240000;
+    int target = 240000;
     // int target = 260000;
     // int target = 275000;
-    int target = 280000;
+    // int target = 280000;
 
     //int target = 290000;
     //int target = 300000;
@@ -74,12 +74,18 @@ int main() {
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
-    write2ftdi_forever(pio1, 0, cf_offset, data_pins_7, clk_then_wr_pin);
+    write2ftdi_forever(pio1, 0, cf_offset, data_pins_8, cs_a0_wr_pin);
 
-    pio1->sm[0].shiftctrl =
+    // pio1->sm[0].shiftctrl =
+    //     (1u << PIO_SM0_SHIFTCTRL_OUT_SHIFTDIR_LSB) |
+    //     (1u << PIO_SM0_SHIFTCTRL_AUTOPULL_LSB) |
+    //     (7u << PIO_SM0_SHIFTCTRL_PULL_THRESH_LSB); //CHECK
+    pio1->sm[0].shiftctrl = 
+        (1u << PIO_SM0_SHIFTCTRL_IN_SHIFTDIR_LSB) |
         (1u << PIO_SM0_SHIFTCTRL_OUT_SHIFTDIR_LSB) |
-        (1u << PIO_SM0_SHIFTCTRL_AUTOPULL_LSB) |
-        (7u << PIO_SM0_SHIFTCTRL_PULL_THRESH_LSB); //CHECK
+        0;
+
+
 
     int cycles_per_bit = 2;
     int sys_clock = clock_get_hz(clk_sys);
@@ -88,7 +94,8 @@ int main() {
 
     uint32_t count = 0;
     while (true) {
-        pio_sm_put_blocking(pio1, 0, count); // 3-4 counts
+        pio_sm_put_blocking(pio1, 0, count);
+        // pio_sm_put_blocking(pio1, 0, count & 0b10000001);
 
         //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
 
@@ -116,9 +123,9 @@ void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin) {
     pio_sm_set_enabled(pio, sm, true);
 }
 
-void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_7, uint clk_then_wr_pin) {
-    write2ftdi_program_init(pio, sm, offset, data_pins_7, clk_then_wr_pin);
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint cs_a0_wr_pin) {
+    write2ftdi_program_init(pio, sm, offset, data_pins_8, cs_a0_wr_pin);
     pio_sm_set_enabled(pio, sm, true);
 
-    printf("Writing to FTDI on pins %d %d %d\n", data_pins_7, clk_then_wr_pin);
+    printf("Writing to FTDI on pins %d %d %d\n", data_pins_8, cs_a0_wr_pin);
 }
