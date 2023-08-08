@@ -14,18 +14,50 @@
 ; .side_set 2 opt
 .side_set 3
 
+; ;                             CS# A0 WR#
+;     pull Block           side 0b101
+; .wrap_target
+; ;                             CS# A0 WR#
+;     ; out pins, 8          side 0b001
+;     out pins, 8          side 0b101 [3]
+;     nop                  side 0b001 [1]
+
+;     nop                  side 0b000 [3]
+;     nop                  side 0b000 [1]
+;     pull Block           side 0b101
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+;     nop                  side 0b101 [3]
+; .wrap
+
+; ;                             CS# A0 WR#
+; .wrap_target
+; ;                             CS# A0 WR#
+;     nop                  side 0b101
+;     nop                  side 0b001
+;     nop                  side 0b000 [3]
+;     nop                  side 0b001
+;     nop                  side 0b101
+; .wrap
+
 ;                             CS# A0 WR#
-    pull Block           side 0b101
 .wrap_target
 ;                             CS# A0 WR#
-    ; out pins, 8          side 0b001
-    out pins, 8          side 0b101 [3]
-    nop                  side 0b001 [1]
+    nop                  side 0b101
 
-    nop                  side 0b000 [3]
-    nop                  side 0b000 [1]
-    pull Block           side 0b101
-    nop                  side 0b101 [3]
+    nop                  side 0b001 [0] ; CS# down
+    
+    nop                  side 0b000 [3] ; WR# down
+    nop                  side 0b000 [2]
+
+    nop                  side 0b001 [0] ; WR# up
+
+    nop                  side 0b101 [3] ; CS# up
     nop                  side 0b101 [3]
     nop                  side 0b101 [3]
     nop                  side 0b101 [3]
@@ -34,6 +66,12 @@
     nop                  side 0b101 [3]
     nop                  side 0b101 [3]
 .wrap
+
+; ;                             CS# A0 WR#
+; .wrap_target
+; ;                             CS# A0 WR#
+;     nop                  side 0b101 [3]
+; .wrap
 
 
 % c-sdk {
