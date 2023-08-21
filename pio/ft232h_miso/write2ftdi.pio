@@ -15,11 +15,14 @@
 .side_set 4
 
 ;                             CS# A0 RD# WR#
+    set y, 0             side 0b1011 [0]
+    ; mov y, !y            side 0b1011 [0] ; 11111111
     pull Block           side 0b1011 [0]
 .wrap_target
 ;                             CS# A0 RD# WR#
     ; out pins, 8          side 0b0011
     ; out pins, 8          side 0b1011 [0]
+    ; set x, 0b11111       side 0b1011 [0]
     mov pins, x          side 0b1011 [0]
     ; nop                  side 0b1011 [0]
     
@@ -35,13 +38,12 @@
     pull Block           side 0b1011 [0] ; CS# up
     nop                  side 0b1011 [1]
     nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
 
     ; Read state              CS# A0 RD# WR#
 
-    set y, 0b0000        side 0b1011 [0]
-    mov osr, y           side 0b1011 [0]
-    out pindirs 4        side 0b1011 [1] ; Hopefully the possible conflict on pins 5-7 isn't a problem
+    mov osr, y          side 0b1011 [0] ; 00000000
+    out pindirs 8        side 0b1011 [1] ; Hopefully the possible conflict on pins 5-7 isn't a problem
 
     ; set pindirs, 0b00000 side 0b1011 [1] ; Hopefully the possible conflict on pins 5-7 isn't a problem
 
@@ -51,7 +53,25 @@
     nop                  side 0b0101 [1]
     ; nop                  side 0b0101 [1]
 
-    mov x, pins          side 0b0101 [1]
+
+
+
+    jmp pin rd           side 0b0101 [1]
+    set x, 0b010         side 0b0101 [1]
+    jmp rdx              side 0b0101 [1]
+rd:
+    set x, 0b100         side 0b0101 [1]
+rdx:
+
+; // Why does the latter block work and the former doesn't???
+
+;     set x, 0b100         side 0b0101 [1]
+;     jmp pin rd           side 0b0101 [1]
+;     set x, 0b010         side 0b0101 [1]
+; rd:
+
+
+
 
     nop                  side 0b0111 [1] ; RD# up
     nop                  side 0b0111 [1]
@@ -61,15 +81,14 @@
     nop                  side 0b1011 [1]
     nop                  side 0b1011 [1]
 
-    set y, 0b1111        side 0b1011 [0]
-    mov osr, y           side 0b1011 [0]
-    out pindirs 4        side 0b1011 [1]
+    mov osr, !y           side 0b1011 [0] ; 11111111
+    out pindirs 8        side 0b1011 [1]
 
     ; set pindirs, 0b11111 side 0b1011 [1]
 
     nop                  side 0b1011 [1]
     nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
     ; nop                  side 0b1011 [1]
     ; nop                  side 0b1011 [1]
     ; nop                  side 0b1011 [1]
@@ -161,7 +180,7 @@ void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_8, ui
    sm_config_set_set_pins(&c, wr_rd_a0_cs_pin, 4);
    sm_config_set_sideset_pins(&c, wr_rd_a0_cs_pin);
 
-   //sm_config_set_jmp_pin(&c, comms_pin);
+   sm_config_set_jmp_pin(&c, data_pins_8+7); // data pin 6 // WAIT, WHAT, BACKWARDS
    
    pio_sm_init(pio, sm, offset, &c);
 }
