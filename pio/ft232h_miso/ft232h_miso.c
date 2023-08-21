@@ -36,8 +36,8 @@ int main() {
     // int target = 140000;
     // int target = 200000;
     
-    int target = 180000;
-    // int target = 240000;
+    // int target = 180000;
+    int target = 240000;
     // int target = 250000;
 
     // int target = 260000;
