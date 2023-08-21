@@ -21,8 +21,8 @@ void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin);
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint rd_wr_a0_cs_pin);
 
 int comms_pin = 9;
-int data_pins_8 = 22;
-int wr_rd_a0_cs_pin = 18;
+int data_pins_8 = 15;
+int cs_a0_wr_pin = 26;
 
 int main() {
     setup_default_uart();
@@ -78,7 +78,7 @@ int main() {
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
-    write2ftdi_forever(pio1, 0, cf_offset, data_pins_8, wr_rd_a0_cs_pin);
+    write2ftdi_forever(pio1, 0, cf_offset, data_pins_8, cs_a0_wr_pin);
 
     // pio1->sm[0].shiftctrl =
     //     (1u << PIO_SM0_SHIFTCTRL_OUT_SHIFTDIR_LSB) |
@@ -127,9 +127,9 @@ void freq_gen_forever(PIO pio, uint sm, uint offset, uint comms_pin) {
     pio_sm_set_enabled(pio, sm, true);
 }
 
-void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_a0_cs_pin) {
-    write2ftdi_program_init(pio, sm, offset, data_pins_8, wr_rd_a0_cs_pin);
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint cs_a0_wr_pin) {
+    write2ftdi_program_init(pio, sm, offset, data_pins_8, cs_a0_wr_pin);
     pio_sm_set_enabled(pio, sm, true);
 
-    printf("Writing to FTDI on pins %d %d %d\n", data_pins_8, wr_rd_a0_cs_pin);
+    printf("Writing to FTDI on pins %d %d %d\n", data_pins_8, cs_a0_wr_pin);
 }
