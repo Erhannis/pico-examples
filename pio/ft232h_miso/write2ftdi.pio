@@ -19,7 +19,8 @@
 .wrap_target
 ;                             CS# A0 RD# WR#
     ; out pins, 8          side 0b0011
-    out pins, 8          side 0b1011 [1]
+    out pins, 8          side 0b1011 [0]
+    ; nop                  side 0b1011 [0]
     
     nop                  side 0b0011 [0] ; CS# down
 
@@ -31,22 +32,22 @@
     nop                  side 0b0011 [0] ; WR# up
 
     pull Block           side 0b1011 [0] ; CS# up
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
-    nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
+    ; nop                  side 0b1011 [1]
 .wrap
 
 ; ;                             CS# A0 WR#
