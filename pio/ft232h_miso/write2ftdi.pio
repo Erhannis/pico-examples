@@ -13,8 +13,8 @@
 
 /*
 Times:
-initial: 6720090 B/s
-
+initial:    6720090 B/s
+safe trims: 8050000 B/s
 */
 
 ; .side_set 2 opt
@@ -28,16 +28,14 @@ initial: 6720090 B/s
 beginning:
 ;                             CS# A0 RD# WR#
     ; out pins, 8          side 0b1011 [0]
-    mov pins, x          side 0b1011 [0]
+    mov pins, x          side 0b0011 [0] ; CS# down - 5ns
     
-    nop                  side 0b0011 [0] ; CS# down
-
-    nop                  side 0b0010 [1] ; WR# down
+    nop                  side 0b0010 [1] ; WR# down - 30ns
     nop                  side 0b0010 [1]
     nop                  side 0b0010 [1]
     nop                  side 0b0010 [0]
 
-    nop                  side 0b0011 [0] ; WR# up
+    nop                  side 0b0011 [0] ; WR# up - 5ns
 
 
     ; Read state              CS# A0 RD# WR#
@@ -47,21 +45,19 @@ beginning:
     out pindirs 8        side 0b1011 [1] ; Hopefully the possible conflict on pins 5-7 isn't a problem
 
 checkState:
-    nop                  side 0b0111 [0] ; CS# down, A0 up
+    nop                  side 0b0111 [0] ; CS# down, A0 up - 5ns
 
-    nop                  side 0b0101 [1] ; RD# down
+    nop                  side 0b0101 [1] ; RD# down - 15 ns?
     nop                  side 0b0101 [1]
 
-    set y, 1             side 0b0101 [0]
+    set y, 1             side 0b0101 [0] ; otoh, I had some timing problems near here
     jmp pin rd           side 0b0101 [1]
     set y, 0             side 0b0101 [1] ; pin was 0: no space
 rd:
 
-    nop                  side 0b0111 [1] ; RD# up
-    nop                  side 0b0111 [1]
+    nop                  side 0b0111 [0] ; RD# up
 
     nop                  side 0b1011 [0] ; CS# up, A0 down
-    nop                  side 0b1011 [1]
 
     ; //RAINY //LEAK I think I could use y-- to save an instruction
     jmp !y checkState    side 0b1011 [0]
@@ -74,8 +70,8 @@ rd:
 
     ; Continue
 
-    ; pull Block           side 0b1011 [0] ; CS# up
-    jmp x--, beginning   side 0b1011 [0] ; CS# up
+    ; pull Block           side 0b1011 [0]
+    jmp x--, beginning   side 0b1011 [0]
 .wrap
 
 ; ;                             CS# A0 WR#
