@@ -56,8 +56,8 @@ checkState:
 
     nop                  side 0b0101 [0]
     set y, 0             side 0b0111 [0] ; otoh, I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
-    jmp pin rd           side 0b0101 [1]
-    set y, 1             side 0b0101 [1] ; pin was 0: no space
+    jmp pin rd           side 0b0101 [0]
+    set y, 1             side 0b0101 [0] ; pin was 0: no space
 rd:
 
     jmp y-- checkState   side 0b0101 [0]
