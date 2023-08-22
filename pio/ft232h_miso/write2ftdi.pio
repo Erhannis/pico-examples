@@ -16,6 +16,7 @@ Times:
 initial:    6720090 B/s
 safe trims: 8050000 B/s
 unsafe trims 1: 6810881 B/s ???
+unsafe trims 2: 7367527 B/s
 */
 
 /*
@@ -54,22 +55,20 @@ checkState:
     nop                  side 0b0101 [1] ; RD# down - 15 ns?
     nop                  side 0b0101 [1]
 
-    set y, 1             side 0b0101 [0] ; otoh, I had some timing problems near here
+    set y, 0             side 0b0101 [0] ; otoh, I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
     jmp pin rd           side 0b0101 [1]
-    set y, 0             side 0b0101 [1] ; pin was 0: no space
+    set y, 1             side 0b0111 [1] ; pin was 0: no space
 rd:
 
     nop                  side 0b0111 [0] ; RD# up
 
     nop                  side 0b1011 [0] ; CS# up, A0 down
 
-    ; //RAINY //LEAK I think I could use y-- to save an instruction
-    jmp !y checkState    side 0b1011 [0]
+    jmp y-- checkState    side 0b1011 [0]
 
     ; Has space
 
-    set y, 0             side 0b1011 [0]
-    mov osr, !y          side 0b1011 [0] ; 11111111
+    mov osr, y          side 0b1011 [0] ; 11111111
     out pindirs 8        side 0b1011 [1]
 
     ; Continue
