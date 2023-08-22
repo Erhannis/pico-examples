@@ -42,6 +42,7 @@ beginning:
     nop                  side 0b0010 [1]
     nop                  side 0b0010 [1]
     nop                  side 0b0010 [1]
+    nop                  side 0b0010 [0]
     set y, 0             side 0b0010 [0]
 
     mov osr, y           side 0b0011 [0] ; WR# up - 5ns ; y = 00000000
