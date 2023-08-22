@@ -15,12 +15,14 @@
 .side_set 4
 
 ;                             CS# A0 RD# WR#
-    ; set x, 0             side 0b1011 [0]
-    pull Block           side 0b1011 [0]
+    set x, 0             side 0b1011 [0]
+    ; pull Block           side 0b1011 [0]
 .wrap_target
+beginning:
 ;                             CS# A0 RD# WR#
     ; out pins, 8          side 0b0011
-    out pins, 8          side 0b1011 [0]
+    ; out pins, 8          side 0b1011 [0]
+    mov pins, x          side 0b1011 [0]
     ; nop                  side 0b1011 [0]
     
     nop                  side 0b0011 [0] ; CS# down
@@ -69,7 +71,8 @@ rd:
 
     ; Continue
 
-    pull Block           side 0b1011 [0] ; CS# up
+    ; pull Block           side 0b1011 [0] ; CS# up
+    jmp x--, beginning   side 0b1011 [0] ; CS# up
     ; nop                  side 0b1011 [1]
     ; nop                  side 0b1011 [1]
     ; nop                  side 0b1011 [1]
