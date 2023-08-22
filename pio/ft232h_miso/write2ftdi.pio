@@ -49,8 +49,9 @@ beginning:
 
     nop                  side 0b0111 [0] ; CS# down, A0 up - 5ns
 
+    nop                  side 0b0101 [0] ; RD# down - 15 ns?
 checkState:
-    nop                  side 0b0101 [1] ; RD# down - 15 ns?
+    nop                  side 0b0101 [0]
     nop                  side 0b0101 [1]
 
     set y, 0             side 0b0101 [1] ; otoh, I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
@@ -58,7 +59,7 @@ checkState:
     set y, 1             side 0b0111 [1] ; pin was 0: no space
 rd:
 
-    jmp y-- checkState   side 0b0111 [0]
+    jmp y-- checkState   side 0b0101 [0]
 
     ; Has space
 
