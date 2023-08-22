@@ -15,12 +15,18 @@
 Times:
 initial:    6720090 B/s
 safe trims: 8050000 B/s
+unsafe trims 1: 6810881 B/s ???
+*/
+
+/*
+//LEAK Possible optimizations:
+  loop write several times before read
+  That y-- thing I mention in the middle
+  remove CS# high
 */
 
 ; .side_set 2 opt
 .side_set 4
-; //LEAK Possible optimizations: loop write several times before read
-; //       That y-- thing I mention in the middle
 ;                             CS# A0 RD# WR#
     set x, 0             side 0b1011 [0]
     ; pull Block           side 0b1011 [0]
@@ -33,16 +39,14 @@ beginning:
     nop                  side 0b0010 [1] ; WR# down - 30ns
     nop                  side 0b0010 [1]
     nop                  side 0b0010 [1]
-    nop                  side 0b0010 [0]
+    set y, 0             side 0b0010 [0]
 
-    nop                  side 0b0011 [0] ; WR# up - 5ns
+    mov osr, y           side 0b0011 [0] ; WR# up - 5ns ; y = 00000000
 
 
     ; Read state              CS# A0 RD# WR#
 
-    set y, 0             side 0b1011 [0] ; CS# up
-    mov osr, y           side 0b1011 [0] ; 00000000
-    out pindirs 8        side 0b1011 [1] ; Hopefully the possible conflict on pins 5-7 isn't a problem
+    out pindirs 8        side 0b1011 [0] ; CS# up ; Hopefully the possible conflict on pins 5-7 isn't a problem
 
 checkState:
     nop                  side 0b0111 [0] ; CS# down, A0 up - 5ns
