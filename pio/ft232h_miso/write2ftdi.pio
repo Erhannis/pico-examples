@@ -29,25 +29,23 @@ unsafe trims 2: 7367527 B/s
 ; .side_set 2 opt
 .side_set 4
 ;                             CS# A0 RD# WR#
-    set x, 0             side 0b0011 [0]
-    ; pull Block           side 0b1011 [0]
+    ; set x, 0             side 0b0011 [0]
+    pull Block           side 0b0011 [0]
 .wrap_target
 beginning:
 ;                             CS# A0 RD# WR#
-    ; out pins, 8          side 0b1011 [0]
-    mov pins, x          side 0b0011 [0] ; CS# down - 5ns
+    out pins, 8          side 0b0011 [0] ; CS# down - 5ns
+    ; mov pins, x          side 0b0011 [0] ; CS# down - 5ns
     
     nop                  side 0b0010 [1] ; WR# down - 30ns
     nop                  side 0b0010 [1]
-    nop                  side 0b0010 [0]
     set y, 0             side 0b0010 [0]
+    mov osr, y           side 0b0010 [0]
 
-    mov osr, y           side 0b0011 [0] ; WR# up - 5ns ; y = 00000000
+    out pindirs 8        side 0b0011 [0] ; WR# up - 5ns ; y = 00000000
 
 
     ; Read state              CS# A0 RD# WR#
-
-    out pindirs 8        side 0b0011 [0] ; CS# up ; Hopefully the possible conflict on pins 5-7 isn't a problem
 
 checkState:
     nop                  side 0b0111 [0] ; CS# down, A0 up - 5ns
@@ -55,7 +53,7 @@ checkState:
     nop                  side 0b0101 [1] ; RD# down - 15 ns?
     nop                  side 0b0101 [1]
 
-    set y, 0             side 0b0101 [0] ; otoh, I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
+    set y, 0             side 0b0101 [1] ; otoh, I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
     jmp pin rd           side 0b0101 [1]
     set y, 1             side 0b0111 [1] ; pin was 0: no space
 rd:
@@ -73,8 +71,8 @@ rd:
 
     ; Continue
 
-    ; pull Block           side 0b1011 [0]
-    jmp x--, beginning   side 0b0011 [0]
+    pull Block           side 0b0011 [0]
+    ; jmp x--, beginning   side 0b0011 [0]
 .wrap
 
 ; ;                             CS# A0 WR#
