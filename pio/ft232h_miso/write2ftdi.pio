@@ -38,7 +38,7 @@ beginning:
     mov pins, x          side 0b0011 [0] ; CS# down - 5ns
     
     nop                  side 0b0010 [1] ; WR# down - 30ns
-    nop                  side 0b0010 [0]
+    nop                  side 0b0010 [1]
     nop                  side 0b0010 [0]
     set y, 0             side 0b0010 [0]
 
