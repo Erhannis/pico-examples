@@ -11,6 +11,12 @@
 
 .program write2ftdi
 
+/*
+Times:
+initial: 6720090 B/s
+
+*/
+
 ; .side_set 2 opt
 .side_set 4
 ; //LEAK Possible optimizations: loop write several times before read
