@@ -22,8 +22,9 @@ unsafe trims 2: 7367527 B/s
 /*
 //LEAK Possible optimizations:
   loop write several times before read
-  That y-- thing I mention in the middle
-  remove CS# high
+  That y-- thing I mention in the middle (done)
+  remove CS# high (done)
+  input_sync_bypass (no effect, still got errors on decreasing the read wait)
 */
 
 ; .side_set 2 opt
@@ -33,11 +34,25 @@ unsafe trims 2: 7367527 B/s
     pull Block           side 0b0011 [0]
 .wrap_target
 beginning:
+    out pins, 8          side 0b0011 [0] ; CS# down - 5ns
+    ; mov pins, x          side 0b0011 [0] ; CS# down - 5ns
+    
+    nop                  side 0b0010 [1] ; WR# down - 30ns
+    nop                  side 0b0010 [1] ; Note - I was able to compress out some of these nops, but it didn't improve performance
+    nop                  side 0b0010 [1]
+    nop                  side 0b0010 [1]
+    nop                  side 0b0010 [1]
+    pull Block           side 0b0011 [0]
+    nop                  side 0b0011 [1]
+    nop                  side 0b0011 [1]
+
 ;                             CS# A0 RD# WR#
     out pins, 8          side 0b0011 [0] ; CS# down - 5ns
     ; mov pins, x          side 0b0011 [0] ; CS# down - 5ns
     
     nop                  side 0b0010 [1] ; WR# down - 30ns
+    nop                  side 0b0010 [1] ; Note - I was able to compress out some of these nops, but it didn't improve performance
+    nop                  side 0b0010 [1]
     nop                  side 0b0010 [1]
     set y, 0             side 0b0010 [0]
     mov osr, y           side 0b0010 [0]

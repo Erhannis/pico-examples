@@ -66,6 +66,7 @@ int main() {
 
     // //BCRASH This is bad, according to the docs, something something metastable
     // hw_set_bits(&pio1->input_sync_bypass, 1u << (txe_then_clk_pin2_2+1));
+    // hw_set_bits(&pio1->input_sync_bypass, 1u << wr_rd_a0_cs_pin);
 
     // gpio_init(txe_then_clk_pin2_2+1);
     // gpio_set_dir(txe_then_clk_pin2_2+1, GPIO_IN);
