@@ -17,11 +17,12 @@ initial:    6720090 B/s
 safe trims: 8050000 B/s
 unsafe trims 1: 6810881 B/s ???
 unsafe trims 2: 7367527 B/s
+dangerous shortcuts: 12193187 B/s
 */
 
 /*
 //LEAK Possible optimizations:
-  loop write several times before read
+  loop write several times before read (with 2 iters, almost never gives errors; like 1 in 50MB)
   That y-- thing I mention in the middle (done)
   remove CS# high (done)
   input_sync_bypass (no effect, still got errors on decreasing the read wait)
