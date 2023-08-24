@@ -3,6 +3,7 @@
 #include <hardware/vreg.h>
 
 #include "pico/stdlib.h"
+#include "pico/binary_info.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "hardware/spi.h"
@@ -41,7 +42,7 @@ See, for instance, https://forum.micropython.org/viewtopic.php?t=12695
 
 #define DATA_RDY 27
 
-#define SPI_MODE SPI_MODE0
+// #define SPI_MODE SPI_MODE0
 #define AUTO_INIT 1
 #define AUTO_SHUTTER 1
 #define BATCH_MODE 1
@@ -137,43 +138,57 @@ const uint16_t BS_READ_2ROW[] = {
 
 static const int spiClk = 16000000;
 
-int exchange(int tx) {
-  hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
-  digitalWrite(HSPI_SS, LOW);
-  uint16_t rx = hspi->transfer16(tx);
-  digitalWrite(HSPI_SS, HIGH);
-  hspi->endTransaction();
+static inline void cs_select() {
+    asm volatile("nop \n nop \n nop"); //DUMMY Why are these here???
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+    asm volatile("nop \n nop \n nop"); // FIXME
+}
+
+static inline void cs_deselect() {
+    asm volatile("nop \n nop \n nop"); // FIXME
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    asm volatile("nop \n nop \n nop"); // FIXME
+}
+
+/*
+solder oscillators together
+  redo pcbs
+test max speeds of both modes
+*/
+
+uint16_t exchange(uint16_t tx) {
+  cs_select();
+  uint16_t rx = 0;
+  spi_write16_read16_blocking(spi, &tx, &rx, 1);
+  cs_deselect();
   return rx;
 }
 
-int print_exchange(int tx) {
+uint16_t print_exchange(uint16_t tx) {
   uint16_t rx = exchange(tx);
-  Serial.printf("tx/rx %04X/%04X\n", tx, rx);
+  printf("tx/rx %04X/%04X\n", tx, rx);
   return rx;
 }
 
 uint16_t exchangeBuffer[256];
 void print_exchange_buffer(const uint16_t tx[], int offset, int count) {
-  hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
   for (int i = 0; i < count; i++) {
-    digitalWrite(HSPI_SS, LOW);
+    cs_select();
     exchangeBuffer[i] = hspi->transfer16(tx[offset+i]);
-    digitalWrite(HSPI_SS, HIGH); // Apparently I have to toggle nss between words
+    cs_deselect(); // Apparently I have to toggle nss between words
   }
-  hspi->endTransaction();
   for (int i = 0; i < count; i++) {
-    Serial.printf("tx/rx %04X/%04X\n", tx[offset+i], exchangeBuffer[i]);
+    printf("tx/rx %04X/%04X\n", tx[offset+i], exchangeBuffer[i]);
   }
-  Serial.println();
+  println();
 }
 void exchange_buffer(const uint16_t tx[], int tx_offset, int count, uint16_t rx[], int rx_offset) {
   hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
   for (int i = 0; i < count; i++) {
-    digitalWrite(HSPI_SS, LOW);
+    cs_select();
     rx[rx_offset+i] = hspi->transfer16(tx[tx_offset+i]);
-    digitalWrite(HSPI_SS, HIGH); // Apparently I have to toggle nss between words
+    cs_deselect(); // Apparently I have to toggle nss between words
   }
-  hspi->endTransaction();
 }
 
 void wait_ready() {
@@ -216,10 +231,10 @@ void initEpc611() {
 
     gpio_init(DATA_RDY);
     gpio_set_dir(DATA_RDY, GPIO_IN);
-    while (true) {
-        //gpio_get
-        // gpio_put(0, true);
-    }
+    // while (true) {
+    //     //gpio_get
+    //     // gpio_put(0, true);
+    // }
 
     wait_ready();
 
