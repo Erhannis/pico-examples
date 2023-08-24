@@ -1,9 +1,3 @@
-/**
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
 #include <stdio.h>
 #include <math.h>
 #include <hardware/vreg.h>
@@ -44,6 +38,195 @@ but add these three lines near the top, after the name definition (maybe rename 
 See, for instance, https://forum.micropython.org/viewtopic.php?t=12695
 */
 // int delayMul = PICO_XOSC_STARTUP_DELAY_MULTIPLIER;
+
+#define DATA_RDY 27
+
+#define SPI_MODE SPI_MODE0
+#define AUTO_INIT 1
+#define AUTO_SHUTTER 1
+#define BATCH_MODE 1
+
+const uint16_t BS_STARTUP[] = {
+  //DUMMY Load sequencer
+};
+
+const uint16_t BS_SETTNGS_1[] = {
+  0x8100, // Page select 1
+  0x5A00, // Adjust 1
+  0x8500, // Page select 5
+  0x4B00, // Adjust 2
+  0x0000  // NOP //THINK Skip nop?
+};
+
+// Only for WAFER ID < 13
+const uint16_t BS_SETTNGS_2[] = {
+  0x8400, // Page select 4
+  0x481F, // Adjust 3
+  0x8500, // Page select 5
+  0x4E01, // Adjust 4
+  0x8600, // Page select 6
+  0x5162, // Adjust 5
+  0x0000  // NOP //DITTO
+};
+
+const uint16_t BS_SET_MODE_GIM[] = {
+  0x8400, // Page select 4
+  0x52C0, // Set modulation selection
+  0x5523, // Set 8x8 greyscale imager mode
+  0x0000  // NOP //DITTO  
+};
+
+const uint16_t BS_SET_MODULATION_FREQUENCY[] = {
+  0x8400, // Page select 4
+  0x4501, // Set mod. freq. to 10MHz , Is also integration time base
+  0x0000  // NOP //DITTO  
+};
+
+const uint16_t BS_SET_INTEGRATION_TIME[] = {
+  0x8500, // Page select 5
+  // Set int. time 1.6384ms
+  0x4000, // Integration time multiplier, high byte
+  0x4101, // Integration time multiplier, low byte (lowest number = 1)
+  0x4204, // Integration length, high byte //RAINY Permit control
+  0x43FF, // Integration length, low byte
+  0x0000  // NOP //DITTO  
+};
+
+const uint16_t BS_START_MEASUREMENT[] = {
+  0x8200, // Page select 2
+  0x5801, // Set TRIGGER, start measurement
+  0x0000  // NOP //DITTO  
+};
+
+const uint16_t BS_READ_WAFER_ID[] = {
+  0x8700,
+  0x3600,
+  0x3700,
+  0x3800,
+  0x3900,
+  0x0000
+};
+
+const uint16_t BS_READ_2ROW[] = {
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x2C00,
+  0x0000
+};
+
+static const int spiClk = 16000000;
+
+int exchange(int tx) {
+  hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
+  digitalWrite(HSPI_SS, LOW);
+  uint16_t rx = hspi->transfer16(tx);
+  digitalWrite(HSPI_SS, HIGH);
+  hspi->endTransaction();
+  return rx;
+}
+
+int print_exchange(int tx) {
+  uint16_t rx = exchange(tx);
+  Serial.printf("tx/rx %04X/%04X\n", tx, rx);
+  return rx;
+}
+
+uint16_t exchangeBuffer[256];
+void print_exchange_buffer(const uint16_t tx[], int offset, int count) {
+  hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
+  for (int i = 0; i < count; i++) {
+    digitalWrite(HSPI_SS, LOW);
+    exchangeBuffer[i] = hspi->transfer16(tx[offset+i]);
+    digitalWrite(HSPI_SS, HIGH); // Apparently I have to toggle nss between words
+  }
+  hspi->endTransaction();
+  for (int i = 0; i < count; i++) {
+    Serial.printf("tx/rx %04X/%04X\n", tx[offset+i], exchangeBuffer[i]);
+  }
+  Serial.println();
+}
+void exchange_buffer(const uint16_t tx[], int tx_offset, int count, uint16_t rx[], int rx_offset) {
+  hspi->beginTransaction(SPISettings(spiClk, MSBFIRST, SPI_MODE));
+  for (int i = 0; i < count; i++) {
+    digitalWrite(HSPI_SS, LOW);
+    rx[rx_offset+i] = hspi->transfer16(tx[tx_offset+i]);
+    digitalWrite(HSPI_SS, HIGH); // Apparently I have to toggle nss between words
+  }
+  hspi->endTransaction();
+}
+
+void wait_ready() {
+  println("delaying for ready....");
+  for (int i = 0; i < 30; i++) {
+    uint16_t rx = print_exchange(0x0000);
+    if (rx == 0x0000) {
+      println("Ready!");  
+      println();
+      return;
+    }
+    sleep_ms(100);
+  }
+  println("Not ready... :(");  
+  println();
+}
+
+void initEpc611() {
+    printf("Size of frame: %d\n", 8*8*2);
+
+#if !defined(spi_default) || !defined(PICO_DEFAULT_SPI_SCK_PIN) || !defined(PICO_DEFAULT_SPI_TX_PIN) || !defined(PICO_DEFAULT_SPI_RX_PIN) || !defined(PICO_DEFAULT_SPI_CSN_PIN)
+#warning spi example requires SPI pins
+    puts("Default SPI pins were not defined");
+#endif
+
+    spi_init(spi_default, spiClk);
+
+    gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
+    // Make the SPI pins available to picotool
+    bi_decl(bi_3pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI));
+
+    // Chip select is active-low, so we'll initialise it to a driven-high state
+    gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
+    // Make the CS pin available to picotool
+    bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
+
+    gpio_init(DATA_RDY);
+    gpio_set_dir(DATA_RDY, GPIO_IN);
+    while (true) {
+        //gpio_get
+        // gpio_put(0, true);
+    }
+
+    wait_ready();
+
+    if (AUTO_INIT) {
+        processCommand("init");
+    }
+}
 
 int main() {
     stdio_init_all();
