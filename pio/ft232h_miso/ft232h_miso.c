@@ -9,6 +9,9 @@
 #include <hardware/vreg.h>
 
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
+#include "hardware/flash.h"
+#include "pico/flash.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "am_broadcast.pio.h"
@@ -24,8 +27,78 @@ int comms_pin = 9;
 int data_pins_8 = 22;
 int wr_rd_a0_cs_pin = 18;
 
+void core1_entry() {
+    // pico_get_unique_id;
+    // int initResult = flash_init();
+    // printf("init: %d\n", initResult);
+    
+    // uint32_t flash_data;
+    // flash_read(0, &flash_data, sizeof(flash_data));
+    
+    // printf("read data from flash: %u\n", flash_data);
+
+    gpio_init(0);
+    gpio_set_dir(0, GPIO_OUT);
+    while (true) {
+        gpio_put(0, true);
+        sleep_ms(1);
+        gpio_put(0, false);
+        sleep_ms(1);
+    }
+}
+
+#define FLASH_TARGET_OFFSET (256 * 1024)
+
+const uint8_t *flash_target_contents = (const uint8_t *) (XIP_BASE + FLASH_TARGET_OFFSET);
+
+/*
+Ok, I could swear to you, this program was not running on normal boot.
+WAIT, NO, IT'S AGAIN NOT WORKING, AS EXPECTED.
+...
+Ok, so.  It's behaving VERY strangely - it exhibits a bug, I apply patch, the bug goes away,
+I remove patch, the bug STAYS GONE, I try it on new board, IT STAYS GONE,
+I try on another new board, the bug is back, and so forth.
+
+So.  If you should find that the code runs from the debugger, but does not start on its own
+when you plug in the usb, add to your rootmost CMakeLists.txt
+
+set(PICO_BOARD pico_pair)
+
+referencing pico-sdk/src/boards/include/boards/pico_pair.h
+and if you don't have that file, just copy pico-sdk/src/boards/include/boards/pico.h
+but add these three lines near the top, after the name definition (maybe rename the name lines appropriately)
+
+#ifndef PICO_XOSC_STARTUP_DELAY_MULTIPLIER
+#define PICO_XOSC_STARTUP_DELAY_MULTIPLIER 64
+#endif
+
+See, for instance, https://forum.micropython.org/viewtopic.php?t=12695
+*/
+// int delayMul = PICO_XOSC_STARTUP_DELAY_MULTIPLIER;
+
 int main() {
-    setup_default_uart();
+    stdio_init_all();
+    // setup_default_uart();
+
+    // printf("mul %d\n", delayMul);
+
+    // uint8_t id_out[8];
+    // id_out[0] = 0x17;
+    // flash_get_unique_id(id_out);
+    // printf("flash id: %02X%02X%02X%02X%02X%02X%02X%02X\n", id_out[0], id_out[1], id_out[2], id_out[3], id_out[4], id_out[5], id_out[6], id_out[7]);
+
+    // uint8_t random_data[FLASH_PAGE_SIZE];
+    // for (int i = 0; i < FLASH_PAGE_SIZE; ++i)
+    //     random_data[i] = rand() >> 16;
+    // random_data[0] = 0x00u;
+    // random_data[1] = 0xFFu;
+    // random_data[2] = 0x10u;
+    // random_data[3] = 0x20u;
+    // random_data[4] = 0xFFu;
+    // random_data[5] = 0x00u;
+
+    // flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
+    // flash_range_program(FLASH_TARGET_OFFSET, random_data, FLASH_PAGE_SIZE);
 
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
@@ -96,14 +169,27 @@ int main() {
     float div = sys_clock / (1000000 * cycles_per_bit);
     //pio_sm_set_clkdiv(pio1, 0, div);
 
-    uint32_t count = 0;
+    multicore_launch_core1(core1_entry);
+
+    uint32_t min = 0x10000000; // Flash start
+    uint32_t max = min + 16*1024*1024 - 1;
+    uint32_t count = 0x10000000;
     while (true) {
-        pio_sm_put_blocking(pio1, 0, count);
+        pio_sm_put_blocking(pio1, 0, *(uint8_t*)count);
         // pio_sm_put_blocking(pio1, 0, count & 0b10000001);
 
         //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
 
         count++;
+        if (count > max) {
+            count = min;
+            pio_sm_put_blocking(pio1, 0, 0x00);
+            pio_sm_put_blocking(pio1, 0, 0xFF);
+            pio_sm_put_blocking(pio1, 0, 0x40);
+            pio_sm_put_blocking(pio1, 0, 0x60);
+            pio_sm_put_blocking(pio1, 0, 0xFF);
+            pio_sm_put_blocking(pio1, 0, 0x00);
+        }
     }
 }
 

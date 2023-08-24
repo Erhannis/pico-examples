@@ -9,7 +9,7 @@ pico_generate_pio_header(ft232h_miso ${CMAKE_CURRENT_LIST_DIR}/write2ftdi.pio)
 
 target_sources(ft232h_miso PRIVATE ft232h_miso.c)
 
-target_link_libraries(ft232h_miso PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(ft232h_miso PRIVATE pico_stdlib hardware_pio pico_multicore hardware_flash pico_flash hardware_exception)
 pico_add_extra_outputs(ft232h_miso)
 
 example_auto_set_url(ft232h_miso)
