@@ -18,7 +18,7 @@ void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint rd
 
 int comms_pin = 9;
 int data_pins_8 = 22;
-int wr_rd_a0_cs_pin = 18;
+int wr_rd_pin = 18;
 
 /*
 Ok, I could swear to you, this program was not running on normal boot.
@@ -51,7 +51,7 @@ int main() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
 
-    int target = 280000;
+    int target = 240000;
     
     int nearest = 0;
     for (int f = 0; f < 1000000; f += 1000) {
@@ -71,7 +71,7 @@ int main() {
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
-    write2ftdi_forever(pio1, 0, cf_offset, data_pins_8, wr_rd_a0_cs_pin);
+    write2ftdi_forever(pio1, 0, cf_offset, data_pins_8, wr_rd_pin);
 
     pio1->sm[0].shiftctrl = 
         (1u << PIO_SM0_SHIFTCTRL_IN_SHIFTDIR_LSB) |
@@ -88,9 +88,9 @@ int main() {
     }
 }
 
-void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_a0_cs_pin) {
-    write2ftdi_program_init(pio, sm, offset, data_pins_8, wr_rd_a0_cs_pin);
+void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_pin) {
+    write2ftdi_program_init(pio, sm, offset, data_pins_8, wr_rd_pin);
     pio_sm_set_enabled(pio, sm, true);
 
-    printf("Writing to FTDI on pins %d %d %d\n", data_pins_8, wr_rd_a0_cs_pin);
+    printf("Writing to FTDI on pins %d %d %d\n", data_pins_8, wr_rd_pin);
 }

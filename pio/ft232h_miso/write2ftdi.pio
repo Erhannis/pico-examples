@@ -4,55 +4,26 @@
 Current speed: 9635250 B/s
 */
 
-.side_set 4
-;                             CS# A0 RD# WR#
-    ; set x, 0             side 0b0011 [0]
-    pull Block           side 0b0011 [0]
+.side_set 2
+;                             RD# WR#
+    set x, 0             side 0b10 [0]
+    ; pull Block           side 0b11 [0]
 .wrap_target
 beginning:
-;                             CS# A0 RD# WR#
-    out pins, 8          side 0b0011 [0] ; CS# down - 5ns
-    ; mov pins, x          side 0b0011 [0] ; CS# down - 5ns
+;                             RD# WR#
+    mov pins, x          side 0b10 [0]
+    ; out pins, 8          side 0b11 [0]
     
-    nop                  side 0b0010 [1] ; WR# down - 30ns
-    nop                  side 0b0010 [1]
-    set y, 0             side 0b0010 [0]
-    mov osr, y           side 0b0010 [0]
+    ; nop                  side 0b10 [0]
+    ; nop                  side 0b10 [0]
 
-    out pindirs 8        side 0b0011 [0] ; WR# up - 5ns ; y = 00000000
-
-
-    ; Read state              CS# A0 RD# WR#
-
-    nop                  side 0b0111 [0] ; CS# down, A0 up - 5ns
-
-    nop                  side 0b0101 [0] ; RD# down - 20 ns?
-    nop                  side 0b0101 [0]
-checkState:
-    nop                  side 0b0101 [1]
-
-    nop                  side 0b0101 [0] ; I had some timing problems near here - yeah, decreasing cycles here leads to a few errors
-    set y, 0             side 0b0111 [0] ; RD# up
-    jmp pin rd           side 0b0101 [0] ; RD# down - 20 ns, unless space available
-    set y, 1             side 0b0101 [0] ; pin was 0: no space
-rd:
-
-    jmp y-- checkState   side 0b0101 [0]
-
-    ; Has space
-
-    mov osr, y           side 0b0011 [0] ; 11111111
-    out pindirs 8        side 0b0011 [1]
-
-    ; Continue
-
-    pull Block           side 0b0011 [0]
-    ; jmp x--, beginning   side 0b0011 [0]
+    ; pull Block           side 0b11 [0]
+    jmp x--, beginning   side 0b10 [0]
 .wrap
 
 
 % c-sdk {
-void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_a0_cs_pin) {
+void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_pin) {
    pio_sm_config c = write2ftdi_program_get_default_config(offset);
    int N = 8;
    for (int i = 0; i < N; i++) {
@@ -65,16 +36,14 @@ void write2ftdi_program_init(PIO pio, uint sm, uint offset, uint data_pins_8, ui
 //   pio_sm_set_consecutive_pindirs(pio, sm, clk_then_wr_pin, 1, false);
 //   sm_config_set_in_pins(&c, clk_then_wr_pin);
       
-   pio_gpio_init(pio, wr_rd_a0_cs_pin);
-   pio_gpio_init(pio, wr_rd_a0_cs_pin+1);
-   pio_gpio_init(pio, wr_rd_a0_cs_pin+2);
-   pio_gpio_init(pio, wr_rd_a0_cs_pin+3);
-   pio_sm_set_consecutive_pindirs(pio, sm, wr_rd_a0_cs_pin, 4, true);
-   sm_config_set_set_pins(&c, wr_rd_a0_cs_pin, 4);
-   sm_config_set_sideset_pins(&c, wr_rd_a0_cs_pin);
+   pio_gpio_init(pio, wr_rd_pin);
+   pio_gpio_init(pio, wr_rd_pin+1);
+   pio_sm_set_consecutive_pindirs(pio, sm, wr_rd_pin, 2, true);
+   sm_config_set_set_pins(&c, wr_rd_pin, 2);
+   sm_config_set_sideset_pins(&c, wr_rd_pin);
 
    //sm_config_set_jmp_pin(&c, comms_pin);
-   sm_config_set_jmp_pin(&c, data_pins_8+6); // data pin 6
+   sm_config_set_jmp_pin(&c, wr_rd_pin+2);
    
    pio_sm_init(pio, sm, offset, &c);
 }
