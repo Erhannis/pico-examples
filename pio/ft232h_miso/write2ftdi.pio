@@ -6,30 +6,44 @@ Current speed: 9635250 B/s
 
 .side_set 2
 ;                             RD# WR#
-    set x, 0             side 0b10 [0]
+    set x, 0             side 0b11 [0]
+    set y, 10            side 0b11 [0]
     ; pull Block           side 0b11 [0]
 .wrap_target
 beginning:
 ;                             RD# WR#
     mov pins, x          side 0b11 [0]
     ; out pins, 8          side 0b11 [0]
-    
-    nop                  side 0b10 [0]
-    nop                  side 0b10 [0]
 
-    nop                  side 0b10 [0] ; Skip a frame
-    nop                  side 0b10 [0]
     nop                  side 0b11 [0]
-    set y, 10            side 0b11 [0]
-
-loop:
-    nop                  side 0b11 [0]
-    nop                  side 0b11 [0]
-    nop                  side 0b11 [0]
-    jmp y--, loop        side 0b11 [0]
 
     ; pull Block           side 0b11 [0]
-    jmp x--, beginning   side 0b11 [0]
+    jmp x--, loop1       side 0b11 [0]
+loop1:
+    jmp y--, beginning   side 0b11 [0]
+
+flush:
+    set y, 31            side 0b00 [0] ; Pull SIWU# down 250ns = 60 cycles
+    nop                  side 0b00 [6]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [2]
+
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+    nop                  side 0b00 [7]
+
+    jmp beginning        side 0b00 [0]
 .wrap
 
 

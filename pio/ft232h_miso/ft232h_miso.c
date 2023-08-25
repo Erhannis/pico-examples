@@ -18,7 +18,7 @@ void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint rd
 
 int comms_pin = 9;
 int data_pins_8 = 22;
-int wr_rd_pin = 18;
+int wr_rd_pin = 15;
 
 /*
 Ok, I could swear to you, this program was not running on normal boot.
