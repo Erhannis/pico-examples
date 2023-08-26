@@ -80,11 +80,14 @@ int main() {
 
     uint32_t count = 0;
     while (true) {
-        pio_sm_put_blocking(pio1, 0, count);
+        pio_sm_put_blocking(pio1, 0, 512);
+    
+        // for (int i = 0; i < 512; i++) {
+        //     pio_sm_put_blocking(pio1, 0, count);
+        //     //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
 
-        //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
-
-        count++;
+        //     count++;
+        // }
     }
 }
 
