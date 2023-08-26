@@ -31,7 +31,7 @@ delay:
     nop                  side 0b11 [0]
     jmp y--, delay       side 0b11 [0]
 
-    ; nop                  side 0b11 [0] ; Hang on, this should throw things out of alignment, but I don't notice a difference when I enable it
+    nop                  side 0b11 [0] ; Hang on, this should throw things out of alignment, but I don't notice a difference when I enable it.  Actually, I think it DECREASES the length of the skips?? 76->13??  But write speed goes down 10% or something.  What the heck
     pull Block           side 0b11 [0] ; //LEAK Autopull?
     mov y, osr           side 0b11 [0]
 .wrap
