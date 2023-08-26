@@ -100,6 +100,9 @@ int main() {
         (1u << PIO_SM0_SHIFTCTRL_OUT_SHIFTDIR_LSB) |
         0;
 
+    pio_sm_put_blocking(pio1, 0, 0b10000001);
+    pio_sm_put_blocking(pio1, 0, 0b01000010);
+
     uint32_t count = 0;
     while (true) {
         pio_sm_put_blocking(pio1, 0, 512);
