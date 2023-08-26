@@ -33,16 +33,6 @@ flush:
     nop                  side 0b00 [7]
     nop                  side 0b00 [2]
 
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-    nop                  side 0b00 [7]
-
     jmp beginning        side 0b00 [0]
 .wrap
 
