@@ -51,7 +51,7 @@ int main() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
 
-    int target = 242000;
+    int target = 240000;
     
     int i1 = 0;
     int d1 = abs(target-i1);
