@@ -13,9 +13,12 @@
 #include "hardware/clocks.h"
 #include "hardware/spi.h"
 #include "write2ftdi.pio.h"
+#include "clock_sync.pio.h"
 
+void clock_sync_forever(PIO pio, uint sm, uint offset, uint clk60_pin);
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint rd_wr_a0_cs_pin);
 
+int clk60_pin = 17;
 int comms_pin = 9;
 int data_pins_8 = 22;
 int wr_rd_pin = 18;
@@ -45,9 +48,7 @@ See, for instance, https://forum.micropython.org/viewtopic.php?t=12695
 */
 // int delayMul = PICO_XOSC_STARTUP_DELAY_MULTIPLIER;
 
-int main() {
-    stdio_init_all();
-
+void syncClock() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
 
@@ -89,7 +90,26 @@ int main() {
     printf("nearest 3: %d %d %d\n", i1, i2, i3);
 
     //vreg_set_voltage(VREG_VOLTAGE_1_20);
-    set_sys_clock_khz(i1, true);
+
+    set_sys_clock_khz(i2, true); // Set to a NEAR freq
+
+    uint cs_offset = pio_add_program(pio1, &clock_sync_program);
+    printf("Loaded program at %d\n", cs_offset);
+    clock_sync_forever(pio1, 0, cs_offset, clk60_pin);
+
+    int32_t offset = 0;
+    uint32_t loops = offset-2*pio_sm_get_blocking(pio1, 0);
+
+    //RAINY //LEAK This would probably be better as an ASM block, but I know how to do PIO and not ASM.
+    pio_sm_put_blocking(pio1, 0, loops);
+    pio_sm_get_blocking(pio1, 0);
+    set_sys_clock_khz(i1, true); // Set to the true freq
+}
+
+int main() {
+    stdio_init_all();
+
+    syncClock();
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
@@ -115,6 +135,13 @@ int main() {
         //     count++;
         // }
     }
+}
+
+void clock_sync_forever(PIO pio, uint sm, uint offset, uint clk60_pin) {
+    clock_sync_program_init(pio, sm, offset, clk60_pin);
+    pio_sm_set_enabled(pio, sm, true);
+
+    printf("Syncing clock on pin %d\n", clk60_pin);
 }
 
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_pin) {

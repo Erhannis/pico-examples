@@ -3,6 +3,7 @@ add_executable(ft232h_miso)
 #pico_set_binary_type(ft232h_miso copy_to_ram)
 
 pico_generate_pio_header(ft232h_miso ${CMAKE_CURRENT_LIST_DIR}/write2ftdi.pio)
+pico_generate_pio_header(ft232h_miso ${CMAKE_CURRENT_LIST_DIR}/clock_sync.pio)
 
 target_sources(ft232h_miso PRIVATE ft232h_miso.c)
 

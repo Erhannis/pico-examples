@@ -1,0 +1,53 @@
+.program clock_sync
+
+.wrap_target
+    ; Wait for 0
+W01:
+    nop
+    nop
+    nop
+    jmp pin, W01
+
+    ; Wait for 1
+W1:
+    nop
+    nop
+    jmp pin W02I
+    jmp W1
+
+    ; Wait for 0
+W02I:
+    set x, 0
+W02:
+    nop
+    nop
+    jmp x--, W02X
+W02X:
+    jmp pin, W02
+
+    mov isr, x
+    push block
+
+    ; Read adjustment loops
+    pull block
+    mov x, osr
+
+delay:
+    jmp x--, delay
+
+    push
+
+halt:
+    jmp halt
+.wrap
+
+
+% c-sdk {
+void clock_sync_program_init(PIO pio, uint sm, uint offset, uint clk60_pin) {
+   pio_sm_config c = clock_sync_program_get_default_config(offset);
+      
+   sm_config_set_jmp_pin(&c, clk60_pin);
+   
+   pio_sm_init(pio, sm, offset, &c);
+}
+%}
