@@ -51,23 +51,45 @@ int main() {
     uint vco, postdiv1, postdiv2;
     int maxf = 0;
 
-    int target = 240000;
+    int target = 242000;
     
-    int nearest = 0;
+    int i1 = 0;
+    int d1 = abs(target-i1);
+    int i2 = 0;
+    int d2 = abs(target-i2);
+    int i3 = 0;
+    int d3 = abs(target-i3);
     for (int f = 0; f < 1000000; f += 1000) {
         if (check_sys_clock_khz(f, &vco, &postdiv1, &postdiv2)) {
             printf("%d\n", f);
             maxf = f;
-            if (abs(target-f) < abs(target-nearest)) {
-                nearest = f;
+            int d = abs(target-f);
+            //SHAME Probably not optimal
+            if (d < d3) {
+                i3 = f;
+                d3 = d;
+            }
+            if (d < d2) {
+                i3 = i2;
+                d3 = d2;
+                i2 = f;
+                d2 = d;
+            }
+            if (d < d1) {
+                i3 = i2;
+                d3 = d2;
+                i2 = i1;
+                d2 = d1;
+                i1 = f;
+                d1 = d;
             }
         }
     }
     printf("max: %d\n", maxf);
-    printf("nearest: %d\n", nearest);
+    printf("nearest 3: %d %d %d\n", i1, i2, i3);
 
     //vreg_set_voltage(VREG_VOLTAGE_1_20);
-    set_sys_clock_khz(nearest, true);
+    set_sys_clock_khz(i1, true);
 
     uint cf_offset = pio_add_program(pio1, &write2ftdi_program);
     printf("Loaded program at %d\n", cf_offset);
