@@ -81,6 +81,7 @@ int main() {
     uint32_t count = 0;
     while (true) {
         pio_sm_put_blocking(pio1, 0, 512);
+        pio_sm_put_blocking(pio1, 0, 256);
     
         // for (int i = 0; i < 512; i++) {
         //     pio_sm_put_blocking(pio1, 0, count);

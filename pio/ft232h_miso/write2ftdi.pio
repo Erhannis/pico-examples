@@ -10,21 +10,30 @@ Current speed: 9635250 B/s
     pull Block           side 0b10 [0] ; //LEAK Autopull?
     mov y, osr           side 0b10 [0]
 .wrap_target
-beginning:
+write:
 ;                             RD# WR#
-    mov pins, x          side 0b10 [0]
+    mov pins, x          side 0b11 [0]
     ; out pins, 8          side 0b11 [0]
     
     nop                  side 0b10 [0]
 
-    jmp x--, check       side 0b10 [0]
-check:
-    jmp y--, beginning   side 0b10 [0]
+    jmp x--, check1      side 0b10 [0]
+check1:
+    jmp y--, write       side 0b11 [0]
 
-    pull Block           side 0b10 [0] ; //LEAK Autopull?
-    mov y, osr           side 0b10 [0]
-    nop                  side 0b10 [0]
-    nop                  side 0b10 [0]
+    pull Block           side 0b11 [0] ; //LEAK Autopull?
+    mov y, osr           side 0b11 [0]
+
+delay:
+;                             RD# WR#
+    nop                  side 0b11 [0]
+    nop                  side 0b11 [0]
+    nop                  side 0b11 [0]
+    jmp y--, delay       side 0b11 [0]
+
+    ; nop                  side 0b11 [0] ; Hang on, this should throw things out of alignment, but I don't notice a difference when I enable it
+    pull Block           side 0b11 [0] ; //LEAK Autopull?
+    mov y, osr           side 0b11 [0]
 .wrap
 
 
