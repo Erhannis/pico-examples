@@ -391,33 +391,33 @@ int main() {
         (1u << PIO_SM0_SHIFTCTRL_OUT_SHIFTDIR_LSB) |
         0;
 
-    // if (AUTO_SHUTTER) {
-    //     // long t = micros();
-    //     // long diff = t - timer;
-    //     // Serial.printf("out: %ld", diff);
-    //     // timer = t;
+    if (AUTO_SHUTTER) {
+        // long t = micros();
+        // long diff = t - timer;
+        // Serial.printf("out: %ld", diff);
+        // timer = t;
 
-    //     while (true) {
-    //         processCommand("s");
-    //     }
+        while (true) {
+            processCommand("s");
+        }
 
-    //     // t = micros();
-    //     // diff = t - timer;
-    //     // Serial.printf("in: %ld", diff);
-    //     // timer = t;
-    // } else {
-    //     readSerialCommand();
-    // }
-    //delay(10);
-
-    uint32_t count = 0;
-    while (true) {
-        pio_sm_put_blocking(pio1, 0, count);
-
-        //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
-
-        count++;
+        // t = micros();
+        // diff = t - timer;
+        // Serial.printf("in: %ld", diff);
+        // timer = t;
+    } else {
+        readSerialCommand();
     }
+    delay(10);
+
+    // uint32_t count = 0;
+    // while (true) {
+    //     pio_sm_put_blocking(pio1, 0, count);
+
+    //     //pio1->txf[0] = count; // 1-2 counts , but I prob...MAYBE need the blocking.
+
+    //     count++;
+    // }
 }
 
 void write2ftdi_forever(PIO pio, uint sm, uint offset, uint data_pins_8, uint wr_rd_a0_cs_pin) {
