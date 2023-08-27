@@ -1,7 +1,7 @@
 .program write2ftdi
 
 /*
-Current speed: 9635250 B/s
+CPU FIFO - ~9MB/s
 */
 
 .side_set 4
